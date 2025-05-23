@@ -1,0 +1,19 @@
+---
+- name: Apply compliance profile
+  hosts: all
+  become: true
+  vars:
+    compliance_profile: undef
+
+  tasks:
+    - name: Check os type
+      ansible.builtin.assert:
+        that: "ansible_os_family == 'RedHat'"
+      tags: always
+
+    - name: Run Security Compliance Profile!!
+      ansible.builtin.include_role:
+        name: "redhatofficial.rhel{{ ansible_distribution_major_version }}_{{ compliance_profile }}"
+      vars:
+        service_firewalld_enabled: true
+      tags: always

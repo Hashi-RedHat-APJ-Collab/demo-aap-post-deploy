@@ -1,0 +1,15 @@
+---
+- name: Apply compliance profile
+  hosts: all
+  tasks:
+  - name: Send e-mail Notification
+    community.general.mail:
+      host: "{{ EMAIL_HOST }}"
+      username: "{{ EMAIL_USERNAME }}"
+      password: "{{ EMAIL_PASSWORD }}"
+      port: "{{ EMAIL_PORT }}"
+      subject: "{{ var_email_subject }}"
+      body: "{{ var_email_body }}"
+      from: "{{ var_email_from }}"
+      to: "{{ var_to_email }}"
+    delegate_to: localhost
