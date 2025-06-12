@@ -2,3 +2,5 @@
 collections:
   - name: community.hashi_vault
   - name: community.general
+  - name: servicenow.itsm
+
