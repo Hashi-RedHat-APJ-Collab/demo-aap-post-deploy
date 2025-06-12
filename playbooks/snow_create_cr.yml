@@ -1,0 +1,37 @@
+---
+- name: Create a standard SNOW change request
+  hosts: all
+  gather_facts: false
+  connection: local
+
+  vars:
+    servicenow_cr: create
+    cr_short_description: "Provision Change Request"
+    cr_description: "{{ change_owner | default('Ansible') }} requests to provision in {{ change_environment | default('Dev') }}"
+
+  roles:
+    - demo.process.snow_change_request
+  run_once: true
+
+  post_tasks:
+
+    - name: Update to scheduled the change request in ServiceNow
+      servicenow.itsm.change_request:
+        state: scheduled
+        number: "{{ request.record.number }}"
+        assignment_group: CAB Approval
+      run_once: true
+
+    - name: Update to implement the change request in ServiceNow
+      servicenow.itsm.change_request:
+        state: implement
+        number: "{{ request.record.number }}"
+        assignment_group: CAB Approval
+      run_once: true
+
+    - name: Store Change Record Detail
+      ansible.builtin.set_fact:
+         request: "{{ request }}"
+         cacheable: yes
+      run_once: true
+

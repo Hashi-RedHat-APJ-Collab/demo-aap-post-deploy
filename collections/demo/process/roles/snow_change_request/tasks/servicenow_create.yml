@@ -1,0 +1,19 @@
+---
+- name: Create ServiceNow Change Request
+  servicenow.itsm.change_request:
+    state: new
+    type: standard
+    short_description: "{{ cr_short_description }}"
+    description: "{{ cr_description }}"
+    priority: low
+    impact: low
+    assignment_group: CAB Approval
+  register: request
+  delegate_to: localhost
+
+- name: Pass along request information
+  ansible.builtin.set_stats:
+    data:
+      request: "{{ request }}"
+    per_host: false
+  delegate_to: localhost
