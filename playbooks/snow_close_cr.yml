@@ -1,6 +1,6 @@
 ---
 - name: Close a change request
-  hosts: localhost
+  hosts: all
   gather_facts: false
   connection: local
 
