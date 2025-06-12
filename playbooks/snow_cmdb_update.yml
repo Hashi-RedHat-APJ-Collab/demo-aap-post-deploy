@@ -1,0 +1,16 @@
+---
+- name: Update CMDB table
+  hosts: all
+  # gather_facts: false
+  # connection: local
+  tasks:
+  - name: Create CMDB CI
+    ansible.builtin.import_role:
+      name: demo.process.snow_cmdb
+    vars:
+      create_vm_vm_name: "{{ inventory_hostname }}"
+      owner: "{{ create_vm_aws_owner_tag | default('ansible') }}"
+      ip_addr: "{{ public_ip }}"
+      classification: "Development"
+      os: "{{ ansible_distribution }}"
+    delegate_to: localhost
