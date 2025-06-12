@@ -7,7 +7,7 @@
   vars:
     servicenow_cr: close
     close_code: "{{ cr_close_status |default('successful')}}"
-    close_notes: "Change is closed with {{ cr_close_status }} provision"
+    close_notes: "Change is closed with {{ cr_close_status |default('successful')}} provision"
     change_request_number: "{{ request.record.number | default(omit) }}"
 
   roles:
