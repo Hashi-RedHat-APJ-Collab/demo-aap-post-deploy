@@ -6,6 +6,7 @@
 
   vars:
     terraform_action: plan
+    workspace_id: "{{ tfc_workspace_id }}"
 
   roles:
     - terraform_cloud
@@ -19,3 +20,9 @@
       vars:
         comment: "Terraform Plan"
       delegate_to: localhost
+
+    - name: Pass Plan Response
+      ansible.builtin.set_stats:
+        data:
+          terraformplanresponse: "{{ terraformplanresponse }}"
+  
