@@ -19,10 +19,10 @@
         - run_workflow_template:
             organization: "Default"
             name: "Auto Healing Drift Detection"
-            extra_vars:
-              tfc_workspace_id: event.payload.details.workspace_id
-              tfc_workspace_name: event.payload.details.workspace_name
-              tfc_organization_name: event.payload.details.organization_name
+            # extra_vars:
+            #   tfc_workspace_id: event.payload.details.workspace_id
+            #   tfc_workspace_name: event.payload.details.workspace_name
+            #   tfc_organization_name: event.payload.details.organization_name
 
     - name: pending status rule
       condition: event.payload.notifications[0].run_status == "pending"
