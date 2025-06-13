@@ -17,8 +17,8 @@
       servicenow.itsm.incident:
         state: in_progress
         number: "{{ ticket_number }}"
-      vars:
-        comment: "Terraform Plan"
+        other:
+          comments: "{{ terraformplanresult.content | from_json }}"
       delegate_to: localhost
 
     - name: Pass Plan Response

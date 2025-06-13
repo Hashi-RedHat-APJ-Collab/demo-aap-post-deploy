@@ -1,0 +1,18 @@
+---
+- name: Create a change request
+  hosts: all
+  gather_facts: false
+  connection: local
+
+  vars:
+    servicenow_cr: create_wait
+    cr_short_description: "Terraform Apply Request"
+    cr_description: |-
+      Terraform Plan has been executed. Please review and approve to Apply.
+      {{ terraformplanresult.content | from_json }}
+
+  roles:
+    - demo.process.snow_change_request
+  run_once: true
+
+

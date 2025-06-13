@@ -16,5 +16,5 @@
       servicenow.itsm.incident:
         state: in_progress
         number: "{{ ticket_number }}"
-      vars:
-        comment: "Terraform Apply"
+        other:
+          comments: "{{ terraformrunstatus.content | from_json }}"
