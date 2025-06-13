@@ -9,7 +9,8 @@
     ansible.builtin.set_fact:
       servicenow_ticket: close
       incident_description: "{{ var_inc_desc | default('Drift has been remediated') }}"
-      sn_description: "{{ var_inc_sn_desc | default('Drift has been remediated') }}"      
+      sn_description: "{{ var_inc_sn_desc | default('Drift has been remediated') }}"
+      comment: "Drift has been remediated"  
     run_once: yes
 
   roles:
