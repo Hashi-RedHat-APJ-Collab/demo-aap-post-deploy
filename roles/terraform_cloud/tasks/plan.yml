@@ -1,0 +1,50 @@
+---
+
+- name: Send POST request using uri module to run plan
+  ansible.builtin.uri:
+    url: "https://app.terraform.io/api/v2/runs"
+    method: POST
+    headers:
+      Content-Type: "application/vnd.api+json"
+      Authorization: "Bearer {{ hcpterraform_api_token }}"
+    body: |-
+      {
+        "data": {
+          "type": "runs",
+          "relationships": {
+            "workspace": {
+              "data": {
+                "type": "workspaces",
+                "id": "{{ workspace_id }}"
+              }
+            }
+          }
+        }
+      }
+    status_code: 201
+    body_format: json
+    timeout: 60
+  register: terraformplanresponse
+
+- name: Send Get request using uri module to get plan information
+  ansible.builtin.uri:
+    url: "https://app.terraform.io/api/v2/plans/{{ terraformplanresponse.json.data.relationships.plan.data.id }}/json-output"
+    headers:
+      Content-Type: "application/vnd.api+json"
+      Authorization: "Bearer {{ hcpterraform_api_token }}"
+    status_code: 200, 204
+    body_format: json
+    return_content: true
+    timeout: 60
+  register: terraformplanresult
+  retries: 20
+  until: '"\"complete\":true" in terraformplanresult.content'
+
+- name: Set plan output to JSON Var
+  ansible.builtin.set_fact:
+    jsonoutput: "{{ terraformplanresult.content | from_json }}"
+
+- name: Get before and after states for VMs
+  ansible.builtin.set_fact:
+    terraformbefore: "{{ jsonoutput.output_changes.vm_name_terraformvms.before | default([]) }}"
+    terraformafter: "{{ jsonoutput.output_changes.vm_name_terraformvms.after | default([]) }}"

@@ -1,0 +1,15 @@
+- name: Get Event Detail
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Debug all vars
+      ansible.builtin.debug:
+        var: ansible_eda
+
+    # For Testing
+    - name: Pass the event detail
+      ansible.builtin.set_stats:
+        data:
+          var_inc_desc: "Drift Detected"
+          var_inc_sn_desc: "Drift Detected"

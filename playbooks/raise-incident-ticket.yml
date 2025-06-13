@@ -9,9 +9,7 @@
     ansible.builtin.set_fact:
       servicenow_ticket: create
       incident_description: "{{ var_inc_desc | default('Provisioning has been failed') }}"
-      sn_description: |-
-        Provisioning has been failed with the following server!!
-        hostname: {{ inventory_hostname }}
+      sn_description: "{{ var_inc_sn_desc | default('Provisioning has been failed') }}"
       
     run_once: yes
 

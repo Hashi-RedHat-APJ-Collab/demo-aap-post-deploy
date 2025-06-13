@@ -1,0 +1,10 @@
+---
+- name: Terraform Plan
+  ansible.builtin.include_tasks: plan.yml
+  when:
+    - terraform_action == "plan"
+
+- name: Terraform Apply
+  ansible.builtin.include_tasks: apply.yml
+  when:
+    - terraform_action == "apply"

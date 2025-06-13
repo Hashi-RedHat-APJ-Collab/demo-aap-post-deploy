@@ -1,0 +1,19 @@
+---
+- name: Remediate Config Drift from TFC
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks: 
+
+    - name: Trigger TFC 
+      debug:
+        msg: "Trigger TFC Apply"
+    
+    - name: Update an incident in ServiceNow
+      servicenow.itsm.incident:
+        state: in_progress
+        number: "{{ inc_number }}"
+        other:
+          problem_id: "{{ problem.record.sys_id }}"
+      delegate_to: localhost

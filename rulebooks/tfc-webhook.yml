@@ -11,6 +11,19 @@
         # hmac_format: hex
         # hmac_algo: sha512
   rules:
+    - name: Drift Detected
+      condition: event.payload.message == "Drift Detected" and event.payload.details.new_assessment_result.resources_drifted > 0
+      action:
+        - debug:
+          var: event
+        - run_workflow_template:
+            organization: "Default"
+            name: "Auto Healing Drift Detection"
+            extra_vars:
+              tfc_workspace_id: event.payload.details.workspace_id
+              tfc_workspace_name: event.payload.details.workspace_name
+              tfc_organization_name: event.payload.details.organization_name
+
     - name: pending status rule
       condition: event.payload.notifications[0].run_status == "pending"
       action:
