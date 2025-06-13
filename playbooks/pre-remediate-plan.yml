@@ -5,16 +5,17 @@
   gather_facts: false
 
   vars:
-    terraform_action: apply
+    terraform_action: plan
 
   roles:
     - terraform_cloud
 
   post_tasks:
-
+    
     - name: Update an incident in ServiceNow
       servicenow.itsm.incident:
         state: in_progress
         number: "{{ ticket_number }}"
       vars:
-        comment: "Terraform Apply"
+        comment: "Terraform Plan"
+      delegate_to: localhost
