@@ -11,5 +11,10 @@
     - name: Pass the event detail
       ansible.builtin.set_stats:
         data:
+          tfc_workspace_id: "{{ ansible_eda.payload.details.workspace_id }}"
+          tfc_workspace_name: "{{ ansible_eda.payload.details.workspace_name }}"
+          tfc_assessment_result_url: "{{ ansible_eda.payload.details.wo }}"
           var_inc_desc: "Drift Detected"
-          var_inc_sn_desc: "Drift Detected"
+          var_inc_sn_desc: |-
+            Drift Detected with the following Detail:
+            {{ ansible_eda.payload.details }}

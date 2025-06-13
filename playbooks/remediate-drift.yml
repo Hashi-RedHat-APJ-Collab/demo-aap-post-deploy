@@ -13,7 +13,7 @@
     - name: Update an incident in ServiceNow
       servicenow.itsm.incident:
         state: in_progress
-        number: "{{ inc_number }}"
-        other:
-          problem_id: "{{ problem.record.sys_id }}"
+        number: "{{ ticket_number }}"
+        # other:
+        #   problem_id: "{{ problem.record.sys_id }}"
       delegate_to: localhost

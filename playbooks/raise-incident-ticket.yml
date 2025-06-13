@@ -16,3 +16,9 @@
   roles:
     - demo.process.snow_ticket
   run_once: yes
+
+  post_tasks:
+  - name: Pass Incident Ticket number
+    ansible.builtin.set_stats:
+      data:
+        ticket_number: "{{ new_incident.record.number }}"

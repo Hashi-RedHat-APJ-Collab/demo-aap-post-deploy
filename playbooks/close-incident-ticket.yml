@@ -1,0 +1,17 @@
+---
+- name: Close an incident in ServiceNow
+  hosts: all
+  gather_facts: false
+  connection: local
+
+  pre_tasks:
+  - name: Set variables
+    ansible.builtin.set_fact:
+      servicenow_ticket: close
+      incident_description: "{{ var_inc_desc | default('Drift has been remediated') }}"
+      sn_description: "{{ var_inc_sn_desc | default('Drift has been remediated') }}"      
+    run_once: yes
+
+  roles:
+    - demo.process.snow_ticket
+  run_once: yes
