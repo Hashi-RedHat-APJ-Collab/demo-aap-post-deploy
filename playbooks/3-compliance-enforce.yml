@@ -16,4 +16,5 @@
         name: "redhatofficial.rhel{{ ansible_distribution_major_version }}_{{ compliance_profile }}"
       vars:
         sudo_require_authentication: false
+        sudo_remove_nopasswd: false
       tags: always
