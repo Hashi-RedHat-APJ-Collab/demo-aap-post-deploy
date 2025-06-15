@@ -17,4 +17,5 @@
       vars:
         sudo_require_authentication: false
         sudo_remove_nopasswd: false
+        reboot_required: false
       tags: always
