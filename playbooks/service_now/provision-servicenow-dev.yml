@@ -1,0 +1,184 @@
+---
+# Playbook: ServiceNow Developer Instance Provisioning
+# Description: Automates the provisioning of ServiceNow developer instances
+# Author: Ansible Automation Platform
+# Date: June 16, 2025
+#
+# Job Template Survey Configuration:
+# - Variable: servicenow_dev_username
+#   Type: Text
+#   Question: ServiceNow Developer Portal Username
+#   Required: Yes
+#
+# - Variable: servicenow_dev_password
+#   Type: Password
+#   Question: ServiceNow Developer Portal Password
+#   Required: Yes
+#
+# - Variable: instance_name
+#   Type: Text
+#   Question: Instance Name (optional)
+#   Required: No
+#   Default: [auto-generated]
+#
+# - Variable: poll_interval
+#   Type: Integer
+#   Question: Poll Interval in seconds
+#   Required: No
+#   Default: 60
+#
+# - Variable: timeout
+#   Type: Integer
+#   Question: Maximum Timeout in seconds
+#   Required: No
+#   Default: 1800
+#   Note: This variable is internally renamed to max_timeout to avoid Ansible reserved name conflicts
+
+- name: Provision ServiceNow Developer Instance
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    # Required variables - configured via job template survey
+    servicenow_dev_username: "{{ servicenow_dev_username }}"
+    servicenow_dev_password: "{{ servicenow_dev_password }}"
+    # Optional variables with defaults - configurable via job template survey
+    instance_name: "{{ instance_name | default('dev' + lookup('pipe', 'date +%Y%m%d%H%M%S')) }}"
+    poll_interval: "{{ poll_interval | default(60) | int }}"
+    max_timeout: "{{ timeout | default(1800) | int }}"  # 30 minutes in seconds
+    # Internal variables
+    developer_portal_url: "https://developer.servicenow.com"
+    api_base_url: "https://developer.servicenow.com/api/now/devportal"
+    auth_cookie: ""
+    instance_request_id: ""
+    start_time: ""
+  tasks:
+    - name: Set start time
+      ansible.builtin.set_fact:
+        start_time: "{{ lookup('pipe', 'date +%s') }}"
+    - name: Log in to ServiceNow Developer Portal
+      ansible.builtin.uri:
+        url: "{{ developer_portal_url }}/app/dt/api/user/session"
+        method: POST
+        body_format: json
+        body:
+          email: "{{ servicenow_dev_username }}"
+          password: "{{ servicenow_dev_password }}"
+        status_code: 200
+        headers:
+          Content-Type: "application/json"
+      register: login_response
+      failed_when: login_response.status != 200 or login_response.cookies is not defined
+    - name: Store authentication cookie
+      ansible.builtin.set_fact:
+        auth_cookie: "{{ login_response.cookies_string }}"
+    - name: Check if user already has instances
+      ansible.builtin.uri:
+        url: "{{ api_base_url }}/instances"
+        method: GET
+        headers:
+          Cookie: "{{ auth_cookie }}"
+        status_code: 200
+      register: existing_instances
+    - name: Display existing instances
+      ansible.builtin.debug:
+        msg: "Found {{ existing_instances.json.result | default([]) | length }} existing instance(s)"
+    - name: Request new ServiceNow developer instance
+      ansible.builtin.uri:
+        url: "{{ api_base_url }}/instance"
+        method: POST
+        headers:
+          Cookie: "{{ auth_cookie }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          name: "{{ instance_name }}"
+          purpose: "Automated provisioning via Ansible"
+          version: "latest"
+        status_code: 200
+      register: instance_request
+      failed_when: instance_request.status != 200 or instance_request.json.result is not defined
+    - name: Store instance request ID
+      ansible.builtin.set_fact:
+        instance_request_id: "{{ instance_request.json.result.id }}"
+    - name: Display instance request ID
+      ansible.builtin.debug:
+        msg: "Instance request ID: {{ instance_request_id }}"
+    - name: Poll for instance provisioning completion
+      ansible.builtin.uri:
+        url: "{{ api_base_url }}/instance/{{ instance_request_id }}"
+        method: GET
+        headers:
+          Cookie: "{{ auth_cookie }}"
+        status_code: 200
+      register: instance_status
+      until: >
+        instance_status.json.result.status == 'provisioned' or
+        instance_status.json.result.status == 'ready' or
+        instance_status.json.result.status == 'error' or
+        (lookup('pipe', 'date +%s') | int) - (start_time | int) > max_timeout
+      retries: "{{ (max_timeout / poll_interval) | int }}"
+      delay: "{{ poll_interval }}"
+    - name: Fail if instance provisioning timed out
+      ansible.builtin.fail:
+        msg: "Instance provisioning timed out after {{ max_timeout }} seconds"
+      when: instance_status.json.result.status != 'provisioned' and instance_status.json.result.status != 'ready'
+    - name: Fail if instance provisioning failed
+      ansible.builtin.fail:
+        msg: "Instance provisioning failed with status: {{ instance_status.json.result.status }}"
+      when: instance_status.json.result.status == 'error'
+    - name: Get instance details
+      ansible.builtin.uri:
+        url: "{{ api_base_url }}/instance/{{ instance_request_id }}"
+        method: GET
+        headers:
+          Cookie: "{{ auth_cookie }}"
+        status_code: 200
+      register: instance_details
+    - name: Validate instance accessibility
+      ansible.builtin.uri:
+        url: "https://{{ instance_details.json.result.url }}"
+        method: GET
+        status_code: 200
+      register: instance_access
+      ignore_errors: true
+    - name: Calculate provisioning time
+      ansible.builtin.set_fact:
+        provisioning_time: "{{ (lookup('pipe', 'date +%s') | int) - (start_time | int) }}"
+    - name: Display instance details
+      ansible.builtin.debug:
+        msg:
+          - "Instance provisioning completed successfully!"
+          - "Instance URL: https://{{ instance_details.json.result.url }}"
+          - "Username: {{ instance_details.json.result.username }}"
+          - "Password: {{ instance_details.json.result.password }}"
+          - "Instance Name: {{ instance_details.json.result.name }}"
+          - "Status: {{ instance_details.json.result.status }}"
+          - "Provisioning Time: {{ provisioning_time }} seconds"
+    - name: Set instance details as facts
+      ansible.builtin.set_fact:
+        snow_instance_url: "https://{{ instance_details.json.result.url }}"
+        snow_instance_username: "{{ instance_details.json.result.username }}"
+        snow_instance_password: "{{ instance_details.json.result.password }}"
+        snow_instance_name: "{{ instance_details.json.result.name }}"
+        snow_instance_status: "{{ instance_details.json.result.status }}"
+        snow_provisioning_time: "{{ provisioning_time }}"
+    - name: Output instance details
+      ansible.builtin.debug:
+        msg: |
+          # ServiceNow Developer Instance Details
+          ## Connection Information
+          - URL: https://{{ instance_details.json.result.url }}
+          - Username: {{ instance_details.json.result.username }}
+          - Password: {{ instance_details.json.result.password }}
+          ## Instance Information
+          - Name: {{ instance_details.json.result.name }}
+          - Status: {{ instance_details.json.result.status }}
+          - Version: {{ instance_details.json.result.version | default('latest') }}
+          ## Provisioning Information
+          - Request ID: {{ instance_request_id }}
+          - Provisioning Time: {{ provisioning_time }} seconds
+          - Accessibility Check: {{ 'Successful' if instance_access.status == 200 else 'Failed' }}
+          ## Notes
+          - Instance will automatically hibernate after period of inactivity
+          - Access the ServiceNow Developer Portal to manage your instances: https://developer.servicenow.com
