@@ -15,6 +15,9 @@
       register: connection_wait
       ignore_errors: yes
 
+    - name: Gather facts
+      ansible.builtin.gather_facts:
+      
     - name: Install Podman
       ansible.builtin.dnf:
         name: podman
