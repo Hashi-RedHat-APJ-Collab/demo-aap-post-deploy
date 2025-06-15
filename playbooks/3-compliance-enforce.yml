@@ -18,4 +18,5 @@
         sudo_require_authentication: false
         sudo_remove_nopasswd: false
         reboot_required: false
+        medium_severity: false
       tags: always
