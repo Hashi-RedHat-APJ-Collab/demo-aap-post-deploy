@@ -134,12 +134,7 @@
         method: GET
         headers:
           Cookie: "{{ auth_cookie }}"
-          X-UserToken: >-
-            {% if active_login.json is defined and
-            active_login.json.result is defined and
-            active_login.json.result.userToken is defined %}
-            {{ active_login.json.result.userToken }}
-            {% else %}{% endif %}
+          X-UserToken: "{{ user_token }}"
         status_code: [200, 401, 403]
         follow_redirects: true
       register: existing_instances
