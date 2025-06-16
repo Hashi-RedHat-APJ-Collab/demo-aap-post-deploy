@@ -128,6 +128,14 @@
       ansible.builtin.set_fact:
         user_token: ""
       when: user_token is not defined
+      
+    - name: Debug authentication response
+      ansible.builtin.debug:
+        msg: >-
+          User token present: {{ user_token != '' }}
+          Auth cookie present: {{ auth_cookie != '' }}
+          Login response status: {{ active_login.status | default('unknown') }}
+          
     - name: Check if user already has instances
       ansible.builtin.uri:
         url: "{{ api_base_url }}/instances"
@@ -147,7 +155,9 @@
     
     - name: Display existing instances
       ansible.builtin.debug:
-        msg: "Found {{ existing_instances.json.result | default([]) | length }} existing instance(s)"    - name: Request new ServiceNow developer instance
+        msg: "Found {{ existing_instances.json.result | default([]) | length }} existing instance(s)"
+        
+    - name: Request new ServiceNow developer instance
       ansible.builtin.uri:
         url: "{{ api_base_url }}/instance"
         method: POST
@@ -177,12 +187,7 @@
         method: GET
         headers:
           Cookie: "{{ auth_cookie }}"
-          X-UserToken: >-
-            {% if active_login.json is defined and 
-            active_login.json.result is defined and 
-            active_login.json.result.userToken is defined %}
-            {{ active_login.json.result.userToken }}
-            {% else %}{% endif %}
+          X-UserToken: "{{ user_token }}"
           Referer: "{{ developer_portal_url }}/dev-program/dashboard"
         status_code: [200, 404]
         follow_redirects: true
@@ -222,12 +227,7 @@
         method: GET
         headers:
           Cookie: "{{ auth_cookie }}"
-          X-UserToken: >-
-            {% if active_login.json is defined and
-            active_login.json.result is defined and
-            active_login.json.result.userToken is defined %}
-            {{ active_login.json.result.userToken }}
-            {% else %}{% endif %}
+          X-UserToken: "{{ user_token }}"
           Referer: "{{ developer_portal_url }}/dev-program/dashboard"
         status_code: 200
         follow_redirects: true
