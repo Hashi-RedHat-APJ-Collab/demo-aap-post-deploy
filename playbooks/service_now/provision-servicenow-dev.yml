@@ -48,7 +48,7 @@
     max_timeout: "{{ timeout | default(1800) | int }}"  # 30 minutes in seconds
     # Internal variables
     developer_portal_url: "https://developer.servicenow.com"
-    api_base_url: "https://developer.servicenow.com/app/developer/api/devportal"
+    api_base_url: "https://developer.servicenow.com/devportal.do"
     auth_cookie: ""
     instance_request_id: ""
     start_time: ""
@@ -159,46 +159,55 @@
         
     - name: Request new ServiceNow developer instance
       ansible.builtin.uri:
-        url: "{{ api_base_url }}/instance"
-        method: POST
-        headers:
-          Cookie: "{{ auth_cookie }}"
-          Content-Type: "application/json"
-          X-UserToken: "{{ user_token }}"
-          Referer: "{{ developer_portal_url }}/dev.do"
-        body_format: json
-        body:
-          name: "{{ instance_name }}"
-          purpose: "Automated provisioning via Ansible"
-          version: "latest"
-          release: "latest"
-          template: "personalize"
-        status_code: [200, 201, 202]
-        follow_redirects: true
-      register: instance_request
-      failed_when: (instance_request.status not in [200, 201, 202]) or (instance_request.json.result is not defined)
-    - name: Store instance request ID
-      ansible.builtin.set_fact:
-        instance_request_id: "{{ instance_request.json.result.id }}"
-    - name: Display instance request ID
-      ansible.builtin.debug:
-        msg: "Instance request ID: {{ instance_request_id }}"
-    - name: Poll for instance provisioning completion
-      ansible.builtin.uri:
-        url: "{{ api_base_url }}/instance/{{ instance_request_id }}"
+        url: "{{ api_base_url }}"
         method: GET
         headers:
           Cookie: "{{ auth_cookie }}"
-          X-UserToken: "{{ user_token }}"
           Referer: "{{ developer_portal_url }}/dev.do"
-        status_code: [200, 404]
         follow_redirects: true
+        return_content: true
+        body_format: form-urlencoded
+        status_code: [200, 201, 202]
+        url_username: "{{ servicenow_dev_username }}"
+        url_password: "{{ servicenow_dev_password }}"
+        validate_certs: true
+        params:
+          sysparm_data: >-
+            {"action":"dashboard.instance_request","data":{"family":"yokohama","name":"{{ instance_name }}","purpose":"Automated provisioning via Ansible"}}
+      register: instance_request
+      failed_when: (instance_request.status not in [200, 201, 202])
+    - name: Store instance request ID
+      ansible.builtin.set_fact:
+        instance_request_id: "{{ instance_request.content | regex_search('\"assign_req_id\":\"([^\"]+)\"', '\\1') | default('') }}"
+      
+    - name: Display instance request ID
+      ansible.builtin.debug:
+        msg: "Instance request ID: {{ instance_request_id }}"
+        
+    - name: Fail if instance request ID not found
+      ansible.builtin.fail:
+        msg: "Failed to extract instance request ID from the response. Please check the ServiceNow Developer Portal API."
+      when: instance_request_id == ''
+    - name: Poll for instance provisioning completion
+      ansible.builtin.uri:
+        url: "{{ api_base_url }}"
+        method: GET
+        headers:
+          Cookie: "{{ auth_cookie }}"
+          Referer: "{{ developer_portal_url }}/dev.do"
+        status_code: [200]
+        follow_redirects: true
+        return_content: true
+        url_username: "{{ servicenow_dev_username }}"
+        url_password: "{{ servicenow_dev_password }}"
+        validate_certs: true
+        params:
+          sysparm_data: >-
+            {"action":"instance.ops.get_assign_req_status","data":{"assign_req_id":"{{ instance_request_id }}"}}
       register: instance_status
       until: >
-        (instance_status.status == 200 and
-        (instance_status.json.result.status == 'provisioned' or
-        instance_status.json.result.status == 'ready' or
-        instance_status.json.result.status == 'error')) or
+        (instance_status.status == 200 and 
+        instance_status.content is search('\"status\":\"(provisioned|ready)\"')) or
         (lookup('pipe', 'date +%s') | int) - (start_time | int) > max_timeout
       retries: "{{ (max_timeout / poll_interval) | int }}"
       delay: "{{ poll_interval }}"
@@ -225,55 +234,143 @@
         instance_status.json.result.status == 'error'
     - name: Get instance details
       ansible.builtin.uri:
-        url: "{{ api_base_url }}/instance/{{ instance_request_id }}"
+        url: "{{ api_base_url }}"
         method: GET
         headers:
           Cookie: "{{ auth_cookie }}"
-          X-UserToken: "{{ user_token }}"
           Referer: "{{ developer_portal_url }}/dev.do"
         status_code: 200
         follow_redirects: true
+        return_content: true
+        url_username: "{{ servicenow_dev_username }}"
+        url_password: "{{ servicenow_dev_password }}"
+        validate_certs: true
+        params:
+          sysparm_data: >-
+            {"action":"instance.info.get_by_assign_req_id","data":{"assign_req_id":"{{ instance_request_id }}"}}
       register: instance_details
+      
+    - name: Extract instance details from response
+      ansible.builtin.set_fact:
+        instance_url: "{{ instance_details.content | regex_search('\"url\":\"([^\"]+)\"', '\\1') | default('') }}"
+        instance_username: "{{ instance_details.content | regex_search('\"username\":\"([^\"]+)\"', '\\1') | default('') }}"
+        instance_password: "{{ instance_details.content | regex_search('\"password\":\"([^\"]+)\"', '\\1') | default('') }}"
+        instance_name: "{{ instance_details.content | regex_search('\"name\":\"([^\"]+)\"', '\\1') | default('') }}"
+        instance_status: "{{ instance_details.content | regex_search('\"status\":\"([^\"]+)\"', '\\1') | default('') }}"
+        instance_id: "{{ instance_details.content | regex_search('\"instance_id\":\"([^\"]+)\"', '\\1') | default('') }}"
+        
+    - name: Check if instance is awake
+      ansible.builtin.uri:
+        url: "https://developer.servicenow.com/api/snc/v1/dev/check_instance_awake"
+        method: GET
+        headers:
+          Cookie: "{{ auth_cookie }}"
+          Referer: "{{ developer_portal_url }}/dev.do"
+        status_code: [200, 202]
+        follow_redirects: true
+        return_content: true
+        url_username: "{{ servicenow_dev_username }}"
+        url_password: "{{ servicenow_dev_password }}"
+        validate_certs: true
+      register: instance_awake_check
+      failed_when: false
+      
+    - name: Debug instance awake status
+      ansible.builtin.debug:
+        var: instance_awake_check
+        
+    - name: Set instance awake status
+      ansible.builtin.set_fact:
+        instance_is_awake: "{{ (instance_awake_check.status == 200) and (instance_awake_check.content is search('\"up\":true')) }}"
+        
+    - name: Wake up instance if not already awake
+      ansible.builtin.uri:
+        url: "https://developer.servicenow.com/api/snc/v1/dev/wake_instance"
+        method: POST
+        headers:
+          Cookie: "{{ auth_cookie }}"
+          Referer: "{{ developer_portal_url }}/dev.do"
+          Content-Type: "application/json"
+        status_code: [200, 202]
+        follow_redirects: true
+        return_content: true
+        url_username: "{{ servicenow_dev_username }}"
+        url_password: "{{ servicenow_dev_password }}"
+        validate_certs: true
+        body_format: json
+        body:
+          instance_id: "{{ instance_id }}"
+      register: instance_wake_up
+      when: not instance_is_awake | default(false) | bool
+      
+    - name: Wait for instance to wake up
+      ansible.builtin.uri:
+        url: "https://developer.servicenow.com/api/snc/v1/dev/check_instance_awake"
+        method: GET
+        headers:
+          Cookie: "{{ auth_cookie }}"
+          Referer: "{{ developer_portal_url }}/dev.do"
+        status_code: [200, 202]
+        follow_redirects: true
+        return_content: true
+        url_username: "{{ servicenow_dev_username }}"
+        url_password: "{{ servicenow_dev_password }}"
+        validate_certs: true
+      register: instance_wake_check
+      until: instance_wake_check.content is search('\"up\":true')
+      retries: 10
+      delay: 15
+      when: not instance_is_awake | default(false) | bool
+      failed_when: false
     - name: Validate instance accessibility
       ansible.builtin.uri:
-        url: "https://{{ instance_details.json.result.url }}"
+        url: "https://{{ instance_url }}"
         method: GET
         status_code: 200
       register: instance_access
       ignore_errors: true
+
     - name: Calculate provisioning time
       ansible.builtin.set_fact:
         provisioning_time: "{{ (lookup('pipe', 'date +%s') | int) - (start_time | int) }}"
+
     - name: Display instance details
       ansible.builtin.debug:
         msg:
           - "Instance provisioning completed successfully!"
-          - "Instance URL: https://{{ instance_details.json.result.url }}"
-          - "Username: {{ instance_details.json.result.username }}"
-          - "Password: {{ instance_details.json.result.password }}"
-          - "Instance Name: {{ instance_details.json.result.name }}"
-          - "Status: {{ instance_details.json.result.status }}"
+          - "Instance URL: https://{{ instance_url }}"
+          - "Username: {{ instance_username }}"
+          - "Password: {{ instance_password }}"
+          - "Instance Name: {{ instance_name }}"
+          - "Status: {{ instance_status }}"
+          - "Instance Awake: {{ instance_is_awake | default(false) | bool | ternary('Yes', 'No') }}"
           - "Provisioning Time: {{ provisioning_time }} seconds"
+
     - name: Set instance details as facts
       ansible.builtin.set_fact:
-        snow_instance_url: "https://{{ instance_details.json.result.url }}"
-        snow_instance_username: "{{ instance_details.json.result.username }}"
-        snow_instance_password: "{{ instance_details.json.result.password }}"
-        snow_instance_name: "{{ instance_details.json.result.name }}"
-        snow_instance_status: "{{ instance_details.json.result.status }}"
+        snow_instance_url: "https://{{ instance_url }}"
+        snow_instance_username: "{{ instance_username }}"
+        snow_instance_password: "{{ instance_password }}"
+        snow_instance_name: "{{ instance_name }}"
+        snow_instance_status: "{{ instance_status }}"
+        snow_instance_is_awake: "{{ instance_is_awake | default(false) }}"
         snow_provisioning_time: "{{ provisioning_time }}"
     - name: Output instance details
       ansible.builtin.debug:
         msg: |
           # ServiceNow Developer Instance Details
           ## Connection Information
-          - URL: https://{{ instance_details.json.result.url }}
-          - Username: {{ instance_details.json.result.username }}
-          - Password: {{ instance_details.json.result.password }}
+          - URL: https://{{ instance_url }}
+          - Username: {{ instance_username }}
+          - Password: {{ instance_password }}
           ## Instance Information
-          - Name: {{ instance_details.json.result.name }}
-          - Status: {{ instance_details.json.result.status }}
-          - Version: {{ instance_details.json.result.version | default('latest') }}
+          - Name: {{ instance_name }}
+          - Status: {{ instance_status }}
+          - Version: {{ instance_details.content | regex_search('\"version\":\"([^\"]+)\"', '\\1') | default('latest') }}
+          - Awake Status: {{ instance_is_awake | default(false) | bool | ternary('Awake', 'Hibernating') }}
+          {% if not instance_is_awake | default(false) | bool and instance_wake_up is defined %}
+          - Wake-up Initiated: Yes
+          {% endif %}
           ## Provisioning Information
           - Request ID: {{ instance_request_id }}
           - Provisioning Time: {{ provisioning_time }} seconds
