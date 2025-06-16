@@ -17,7 +17,7 @@
 
 - name: Send Get request using uri module to get run status completed
   ansible.builtin.uri:
-    url: "https://app.terraform.io/api/v2/runs/{{ terraformapplyresponse.json.data.id }}"
+    url: "https://app.terraform.io/api/v2/runs/{{ terraformplanresponse.json.data.id }}"
     headers:
       Content-Type: "application/vnd.api+json"
       Authorization: "Bearer {{ hcpterraform_api_token }}"
