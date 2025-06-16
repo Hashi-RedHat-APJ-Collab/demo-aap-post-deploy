@@ -147,20 +147,14 @@
     
     - name: Display existing instances
       ansible.builtin.debug:
-        msg: "Found {{ existing_instances.json.result | default([]) | length }} existing instance(s)"
-    - name: Request new ServiceNow developer instance
+        msg: "Found {{ existing_instances.json.result | default([]) | length }} existing instance(s)"    - name: Request new ServiceNow developer instance
       ansible.builtin.uri:
         url: "{{ api_base_url }}/instance"
         method: POST
         headers:
           Cookie: "{{ auth_cookie }}"
           Content-Type: "application/json"
-          X-UserToken: >-
-            {% if active_login.json is defined and 
-            active_login.json.result is defined and 
-            active_login.json.result.userToken is defined %}
-            {{ active_login.json.result.userToken }}
-            {% else %}{% endif %}
+          X-UserToken: "{{ user_token }}"
           Referer: "{{ developer_portal_url }}/dev-program/dashboard"
         body_format: json
         body:
