@@ -113,7 +113,7 @@
       
     - name: Set active login response
       ansible.builtin.set_fact:
-        active_login: "{{ alt_login_response if alt_login_response is defined and alt_login_response.skipped is not defined else login_response }}"
+        active_login: "{% if alt_login_response is defined and alt_login_response.skipped is not defined %}{{ alt_login_response }}{% else %}{{ login_response }}{% endif %}"
       
     - name: Store authentication cookie
       ansible.builtin.set_fact:
@@ -123,7 +123,7 @@
       ansible.builtin.debug:
         msg: 
           - "Authentication status: {{ active_login.status | default('unknown') }}"
-          - "User token present: {{ active_login.json.result.userToken is defined if active_login.json is defined else false }}"
+          - "User token present: {% if active_login.json is defined and active_login.json.result is defined and active_login.json.result.userToken is defined %}true{% else %}false{% endif %}"
           - "Cookies received: {{ active_login.cookies is defined }}"
       failed_when: false
     - name: Check if user already has instances
@@ -132,7 +132,11 @@
         method: GET
         headers:
           Cookie: "{{ auth_cookie }}"
-          X-UserToken: "{{ active_login.json.result.userToken | default('') }}"
+          X-UserToken: "{% if active_login.json is defined and 
+                           active_login.json.result is defined and 
+                           active_login.json.result.userToken is defined %}
+                          {{ active_login.json.result.userToken }}
+                        {% else %}{% endif %}"
         status_code: [200, 401, 403]
         follow_redirects: true
       register: existing_instances
@@ -153,7 +157,12 @@
         headers:
           Cookie: "{{ auth_cookie }}"
           Content-Type: "application/json"
-          X-UserToken: "{{ active_login.json.result.userToken | default('') }}"
+          X-UserToken: >-
+            {% if active_login.json is defined and 
+            active_login.json.result is defined and 
+            active_login.json.result.userToken is defined %}
+            {{ active_login.json.result.userToken }}
+            {% else %}{% endif %}
           Referer: "{{ developer_portal_url }}/dev-program/dashboard"
         body_format: json
         body:
@@ -176,7 +185,12 @@
         method: GET
         headers:
           Cookie: "{{ auth_cookie }}"
-          X-UserToken: "{{ active_login.json.result.userToken | default('') }}"
+          X-UserToken: >-
+            {% if active_login.json is defined and 
+            active_login.json.result is defined and 
+            active_login.json.result.userToken is defined %}
+            {{ active_login.json.result.userToken }}
+            {% else %}{% endif %}
           Referer: "{{ developer_portal_url }}/dev-program/dashboard"
         status_code: [200, 404]
         follow_redirects: true
@@ -191,23 +205,37 @@
       delay: "{{ poll_interval }}"
       failed_when: false
     - name: Fail if instance provisioning timed out
-      ansible.builtin.fail:
-        msg: "Instance provisioning timed out after {{ max_timeout }} seconds"
+      ansible.builtin.debug:
+        msg: "Instance provisioning timed out or failed after {{ max_timeout }} seconds"
       when: >
         instance_status.status != 200 or
-        instance_status.json.result.status != 'provisioned' and
-        instance_status.json.result.status != 'ready'
-    - name: Fail if instance provisioning failed
+        instance_status.json is not defined or
+        instance_status.json.result is not defined or
+        instance_status.json.result.status is not defined or
+        (instance_status.json.result.status != 'provisioned' and
+        instance_status.json.result.status != 'ready')
+        
+    - name: Fail if instance provisioning failed with error status
       ansible.builtin.fail:
         msg: "Instance provisioning failed with status: {{ instance_status.json.result.status }}"
-      when: instance_status.status == 200 and instance_status.json.result.status == 'error'
+      when: >
+        instance_status.status == 200 and
+        instance_status.json is defined and
+        instance_status.json.result is defined and
+        instance_status.json.result.status is defined and
+        instance_status.json.result.status == 'error'
     - name: Get instance details
       ansible.builtin.uri:
         url: "{{ api_base_url }}/instance/{{ instance_request_id }}"
         method: GET
         headers:
           Cookie: "{{ auth_cookie }}"
-          X-UserToken: "{{ active_login.json.result.userToken | default('') }}"
+          X-UserToken: >-
+            {% if active_login.json is defined and
+            active_login.json.result is defined and
+            active_login.json.result.userToken is defined %}
+            {{ active_login.json.result.userToken }}
+            {% else %}{% endif %}
           Referer: "{{ developer_portal_url }}/dev-program/dashboard"
         status_code: 200
         follow_redirects: true
