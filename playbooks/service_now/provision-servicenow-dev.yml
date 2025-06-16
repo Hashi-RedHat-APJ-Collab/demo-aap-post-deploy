@@ -48,7 +48,7 @@
     max_timeout: "{{ timeout | default(1800) | int }}"  # 30 minutes in seconds
     # Internal variables
     developer_portal_url: "https://developer.servicenow.com"
-    api_base_url: "https://developer.servicenow.com/api/now/devportal"
+    api_base_url: "https://developer.servicenow.com/app/developer/api/devportal"
     auth_cookie: ""
     instance_request_id: ""
     start_time: ""
@@ -80,7 +80,7 @@
       
     - name: Log in to ServiceNow Developer Portal
       ansible.builtin.uri:
-        url: "{{ developer_portal_url }}/app/dt/api/user/session"
+        url: "{{ developer_portal_url }}/app/developer/dt/api/user/session"
         method: POST
         body_format: json
         body:
@@ -165,12 +165,14 @@
           Cookie: "{{ auth_cookie }}"
           Content-Type: "application/json"
           X-UserToken: "{{ user_token }}"
-          Referer: "{{ developer_portal_url }}/dev-program/dashboard"
+          Referer: "{{ developer_portal_url }}/dev.do"
         body_format: json
         body:
           name: "{{ instance_name }}"
           purpose: "Automated provisioning via Ansible"
           version: "latest"
+          release: "latest"
+          template: "personalize"
         status_code: [200, 201, 202]
         follow_redirects: true
       register: instance_request
@@ -188,7 +190,7 @@
         headers:
           Cookie: "{{ auth_cookie }}"
           X-UserToken: "{{ user_token }}"
-          Referer: "{{ developer_portal_url }}/dev-program/dashboard"
+          Referer: "{{ developer_portal_url }}/dev.do"
         status_code: [200, 404]
         follow_redirects: true
       register: instance_status
@@ -228,7 +230,7 @@
         headers:
           Cookie: "{{ auth_cookie }}"
           X-UserToken: "{{ user_token }}"
-          Referer: "{{ developer_portal_url }}/dev-program/dashboard"
+          Referer: "{{ developer_portal_url }}/dev.do"
         status_code: 200
         follow_redirects: true
       register: instance_details
