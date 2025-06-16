@@ -16,7 +16,7 @@
               "data": {
                 "type": "workspaces",
                 "id": "{{ workspace_id }}",
-                attributes: {
+                "attributes": {
                   "message": "Auto Remediation by AAP - {{ ticket_number }}"
                 }
               }
