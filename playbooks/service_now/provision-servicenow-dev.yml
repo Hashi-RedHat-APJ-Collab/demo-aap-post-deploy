@@ -119,24 +119,27 @@
       ansible.builtin.set_fact:
         auth_cookie: "{{ active_login.cookies_string | default('') }}"
         
-    - name: Debug authentication response
-      ansible.builtin.debug:
-        msg: 
-          - "Authentication status: {{ active_login.status | default('unknown') }}"
-          - "User token present: {% if active_login.json is defined and active_login.json.result is defined and active_login.json.result.userToken is defined %}true{% else %}false{% endif %}"
-          - "Cookies received: {{ active_login.cookies is defined }}"
-      failed_when: false
+    - name: Set user token variable
+      ansible.builtin.set_fact:
+        user_token: "{{ active_login.json.result.userToken | default('') }}"
+      when: active_login.json is defined and active_login.json.result is defined
+      
+    - name: Set empty user token if not available
+      ansible.builtin.set_fact:
+        user_token: ""
+      when: user_token is not defined
     - name: Check if user already has instances
       ansible.builtin.uri:
         url: "{{ api_base_url }}/instances"
         method: GET
         headers:
           Cookie: "{{ auth_cookie }}"
-          X-UserToken: "{% if active_login.json is defined and 
-                           active_login.json.result is defined and 
-                           active_login.json.result.userToken is defined %}
-                          {{ active_login.json.result.userToken }}
-                        {% else %}{% endif %}"
+          X-UserToken: >-
+            {% if active_login.json is defined and
+            active_login.json.result is defined and
+            active_login.json.result.userToken is defined %}
+            {{ active_login.json.result.userToken }}
+            {% else %}{% endif %}
         status_code: [200, 401, 403]
         follow_redirects: true
       register: existing_instances
