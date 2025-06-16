@@ -8,7 +8,7 @@
       Authorization: "Bearer {{ hcpterraform_api_token }}"
     body: |-
       {
-        "comment": "approved"
+        "comment": "approved using Change Request Number: {{request.record.task_effective_number }}"
       }
     status_code: 202
     timeout: 60
