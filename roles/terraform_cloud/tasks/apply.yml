@@ -8,7 +8,7 @@
       Authorization: "Bearer {{ hcpterraform_api_token }}"
     body: |-
       {
-        "comment": "approved using Change Request Number: {{ request.record.task_effective_number }}"
+        "comment": "approved"
       }
     status_code: 202
     timeout: 60
@@ -27,3 +27,5 @@
   register: terraformrunstatus
   retries: 50
   until: terraformrunstatus.json.data.attributes.status == "applied"
+
+      # using Change Request Number: {{ request.record.task_effective_number }}"
