@@ -9,7 +9,7 @@
     cr_short_description: "Terraform Apply Request"
     cr_description: |-
       Terraform Plan has been executed. Please review and approve to Apply.
-      {{ terraformplanresponse }}
+      {{ terraformplanresult }}
 
   roles:
     - demo.process.snow_change_request

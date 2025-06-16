@@ -25,4 +25,5 @@
       ansible.builtin.set_stats:
         data:
           terraformplanresponse: "{{ terraformplanresponse }}"
+          terraformplanresult: "{{ jsonoutput }}"
   
