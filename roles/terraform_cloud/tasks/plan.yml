@@ -13,12 +13,12 @@
           "type": "runs",
           "attributes": {
             "message": "Auto Remediation by AAP - {{ ticket_number }}"
+          },
           "relationships": {
             "workspace": {
               "data": {
                 "type": "workspaces",
-                "id": "{{ workspace_id }}",
-                }
+                "id": "{{ workspace_id }}"
               }
             }
           }
