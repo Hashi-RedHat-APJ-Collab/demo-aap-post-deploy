@@ -120,17 +120,22 @@ Use an execution environment with the following packages:
 1. **Authentication Failure**
    - Verify ServiceNow Developer Portal credentials
    - Check for special characters in password that may need escaping
+   - The playbook handles modern ServiceNow authentication which may involve redirects and CSRF tokens
+   - Make sure your ServiceNow Developer account is active and not locked
 
 2. **Instance Provisioning Timeout**
    - ServiceNow Developer Portal may be experiencing high demand
    - Increase the timeout value and retry
+   - Check if the Developer Portal UI shows any maintenance notifications
 
 3. **Instance Provisioning Error**
    - Check the ServiceNow Developer Portal for quota limitations
    - You may have reached the maximum number of allowed instances
+   - Developer Portal policies may have changed, requiring updates to the playbook
 
 4. **Network Connectivity Issues**
    - Ensure the Ansible controller has network access to developer.servicenow.com
+   - Some corporate networks may block API access to ServiceNow
 
 ## Notes
 
