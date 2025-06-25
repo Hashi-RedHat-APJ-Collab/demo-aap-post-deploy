@@ -13,7 +13,7 @@
     state: assess
   timeout: 120
   register: request
-  until: request.changed is succeeded
+  until: request.changed is defined
   retries: 5
   delay: 5
   delegate_to: localhost
