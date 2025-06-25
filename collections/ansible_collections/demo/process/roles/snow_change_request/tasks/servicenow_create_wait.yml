@@ -9,6 +9,7 @@
     impact: low
     assignment_group: CAB Approval
     state: assess
+    timeout: 120
   register: request
   until: request.changed is defined
   retries: 5
