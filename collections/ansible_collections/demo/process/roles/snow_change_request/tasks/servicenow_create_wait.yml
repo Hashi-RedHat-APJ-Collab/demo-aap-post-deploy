@@ -9,9 +9,9 @@
     impact: low
     assignment_group: CAB Approval
     state: assess
-    timeout: 120
+  timeout: 120
   register: request
-  until: request.changed is defined
+  until: request.changed is succeeded
   retries: 5
   delay: 5
   delegate_to: localhost
