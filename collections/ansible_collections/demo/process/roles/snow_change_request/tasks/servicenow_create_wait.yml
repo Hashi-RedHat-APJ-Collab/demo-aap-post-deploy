@@ -1,6 +1,8 @@
 ---
 - name: Create ServiceNow Change Request
   servicenow.itsm.change_request:
+    instance: 
+      timeout: 120
     type: normal
     short_description: "{{ cr_short_description }}"
     description: "{{ cr_description }}"
