@@ -1,0 +1,66 @@
+- name: Setup webserver and copy custom webpage
+  hosts: all
+  become: true
+  gather_facts: true
+  
+  pre_tasks:
+    - name: Set service name
+      ansible.builtin.set_fact:
+        web_service_name: "{{  'apache2' if (ansible_facts['os_family'] == 'Debian') else 'httpd' }}"
+
+  tasks:
+  - name: Install web package
+    ansible.builtin.dnf:
+      name: "{{ web_service_name }}"
+      state: present
+    notify: Restart web_service
+    when: ansible_facts['os_family'] == 'RedHat'
+
+  - name: Install web package
+    ansible.builtin.apt:
+      name: "{{ web_service_name }}"
+      state: present
+    notify: Restart web_service
+    when: ansible_facts['os_family'] == 'Debian'
+
+  - name: Create index.html
+    ansible.builtin.copy:
+      dest: "/var/www/html/index.html"
+      src: "templates/{{ web_server_type | default('web') }}_server.html"
+      mode: "0664"
+
+  - name: Create image file
+    ansible.builtin.copy:
+      dest: "/var/www/html/"
+      src: templates/Terraform_Ansible_Webinar.jpg
+
+  - name: Gather service facts
+    ansible.builtin.service_facts:
+
+  - name: Enable firewall http service
+    ansible.posix.firewalld:
+      service: http
+      state: enabled
+      immediate: true
+      permanent: true
+    when:
+      - "'firewalld.service' in ansible_facts.services"
+      - ansible_facts.services['firewalld.service']['state'] == 'running'
+
+  - name: Disable httpd welcome page
+    ansible.builtin.file:
+      path: /etc/httpd/conf.d/welcome.conf
+      state: absent
+    notify: Restart web_service
+
+  handlers:
+    - name: Restart web_service
+      ansible.builtin.service:
+        name: "{{ web_service_name }}"
+        state: restarted
+        enabled: true
+
+  post_tasks:
+    - name: Print Web Address
+      ansible.builtin.debug:
+        msg: "http://{{ ansible_host }}"
