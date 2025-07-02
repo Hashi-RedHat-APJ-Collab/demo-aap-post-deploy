@@ -1,14 +1,20 @@
 - name: Setup webserver and copy custom webpage
   hosts: all
   become: true
-  gather_facts: true
+  gather_facts: false
   
   pre_tasks:
-    - name: Set service name
-      ansible.builtin.set_fact:
-        web_service_name: "{{  'apache2' if (ansible_facts['os_family'] == 'Debian') else 'httpd' }}"
+  - name: Gather facts
+    ansible.builtin.setup:
+      filter:
+        - 'ansible_distribution'
 
   tasks:
+  - name: Set service name
+    ansible.builtin.set_fact:
+      web_service_name: "{{  'apache2' if (ansible_facts['os_family'] == 'Debian') else 'httpd' }}"
+
+
   - name: Wait for SSH connection to become available
     ansible.builtin.wait_for_connection:
       delay: 30
