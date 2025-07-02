@@ -7,7 +7,7 @@
   - name: Gather facts
     ansible.builtin.setup:
       filter:
-        - 'ansible_distribution'
+        - 'os_family'
 
   tasks:
   - name: Set service name
