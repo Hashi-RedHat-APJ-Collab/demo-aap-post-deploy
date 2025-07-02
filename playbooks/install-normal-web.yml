@@ -4,12 +4,20 @@
   gather_facts: false
   
   pre_tasks:
+  - name: Wait for SSH connection to become available
+    ansible.builtin.wait_for_connection:
+      delay: 30
+      timeout: 180
+      sleep: 15
+    register: connection_wait
+    ignore_errors: yes
+
+  tasks:
   - name: Gather facts
     ansible.builtin.setup:
       filter:
         - 'ansible_os_family'
 
-  tasks:
   - name: Set service name
     ansible.builtin.set_fact:
       web_service_name: "{{  'apache2' if (ansible_facts['os_family'] == 'Debian') else 'httpd' }}"
