@@ -11,6 +11,12 @@
   register: request
   delegate_to: localhost
 
+- name: Change Request is raised
+  set_fact:
+    msg: >- 
+      You have a new Normal CR raised. 
+      Please click on this URL to review: {{ lookup('env', 'SN_HOST') }}/nav_to.do?uri=change_request.do?sysparm_query=number={{ request.record.number }}
+
 - name: Pass along request information
   ansible.builtin.set_stats:
     data:
