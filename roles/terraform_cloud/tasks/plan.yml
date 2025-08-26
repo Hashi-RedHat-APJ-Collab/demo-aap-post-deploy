@@ -40,7 +40,7 @@
     return_content: true
     timeout: 60
   register: terraformplanresult
-  retries: 20
+  retries: 50
   until: '"\"complete\":true" in terraformplanresult.content'
 
 - name: Set plan output to JSON Var
