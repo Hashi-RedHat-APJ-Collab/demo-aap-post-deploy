@@ -36,16 +36,20 @@
     notify: Restart web_service
     when: ansible_facts['os_family'] == 'Debian'
 
-  - name: Create index.html
-    ansible.builtin.copy:
+  - name: Set image filename based on event variable
+    ansible.builtin.set_fact:
+      image_filename: "{{ 'GC_gartner_IT_Symposium.png' if (event is defined and event == 'GC') else 'Terraform_Ansible_Webinar.jpg' }}"
+
+  - name: Create index.html with dynamic image
+    ansible.builtin.template:
       dest: "/var/www/html/index.html"
-      src: "templates/{{ web_server_type | default('web') }}_server.html"
+      src: "templates/web_server.html.j2"
       mode: "0664"
 
-  - name: Create image file
+  - name: Copy selected image file
     ansible.builtin.copy:
-      dest: "/var/www/html/"
-      src: templates/Terraform_Ansible_Webinar.jpg
+      dest: "/var/www/html/{{ image_filename }}"
+      src: "templates/{{ image_filename }}"
 
   - name: Gather service facts
     ansible.builtin.service_facts:

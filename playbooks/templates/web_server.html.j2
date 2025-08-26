@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if event is defined and event == 'GC' %}Gartner IT Symposium{% else %}Terraform Ansible Webinar{% endif %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+        
+        .image-container {
+            position: relative;
+            width: 100%;
+            padding: 40px;
+            background: #f8f9fa;
+        }
+        
+        .image-wrapper {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .image-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        
+        .image-wrapper:hover img {
+            transform: scale(1.02);
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .image-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{% if event is defined and event == 'GC' %}Welcome to Gartner IT Symposium{% else %}Welcome to Our Platform{% endif %}</h1>
+            <p>{% if event is defined and event == 'GC' %}Experience the Future of IT{% else %}Powered by Terraform & Ansible{% endif %}</p>
+        </div>
+        
+        <div class="image-container">
+            <div class="image-wrapper">
+                <img src="{{ image_filename }}" alt="{% if event is defined and event == 'GC' %}Gartner IT Symposium{% else %}Terraform Ansible Webinar{% endif %}">
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Deployed with Ansible Automation Platform</p>
+            <span class="badge">{% if event is defined and event == 'GC' %}Gartner Connect{% else %}Infrastructure as Code{% endif %}</span>
+        </div>
+    </div>
+</body>
+</html>
