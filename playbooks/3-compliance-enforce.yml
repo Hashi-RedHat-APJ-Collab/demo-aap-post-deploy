@@ -4,6 +4,7 @@
   become: true
   vars:
     compliance_profile: undef
+    demo_mode: false  # Add this variable
 
   tasks:
     - name: Check os type
@@ -11,7 +12,16 @@
         that: "ansible_os_family == 'RedHat'"
       tags: always
 
-    - name: Run Security Compliance Profile!!
+    - name: Run Security Compliance Profile (Demo Mode - Simulated)
+      ansible.builtin.debug:
+        msg:
+          - "DEMO MODE: Security compliance profile would be applied"
+          - "Profile: redhatofficial.rhel{{ ansible_distribution_major_version }}_{{ compliance_profile }}"
+          - "In production, this would apply {{ compliance_profile }} hardening rules"
+      when: demo_mode | bool
+      tags: always
+
+    - name: Run Security Compliance Profile (Full Mode)
       ansible.builtin.include_role:
         name: "redhatofficial.rhel{{ ansible_distribution_major_version }}_{{ compliance_profile }}"
       vars:
@@ -19,4 +29,5 @@
         sudo_remove_nopasswd: false
         reboot_required: false
         medium_severity: false
+      when: not (demo_mode | bool)
       tags: always
