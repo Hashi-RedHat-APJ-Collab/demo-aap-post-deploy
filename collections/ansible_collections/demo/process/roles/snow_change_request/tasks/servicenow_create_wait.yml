@@ -26,7 +26,7 @@
   delegate_to: localhost
 
 - name: Change Request is raised
-  set_fact:
+  ansible.builtin.set_fact:
     msg: >- 
       You have a new CR Approval request. 
       Please click on this URL to approve: {{ lookup('env', 'SN_HOST') }}/nav_to.do?uri=change_request.do?sysparm_query=number={{ request.record.number }}
@@ -44,18 +44,57 @@
 #     to: "{{ to_email }}"
 #   delegate_to: localhost
 
-- name: Wait for Change Request approval
-  servicenow.itsm.change_request_info:
-    number: "{{ request.record.number }}"
-  until: change_request_status.records[0].state == "scheduled"
-  retries: 50
-  delay: 10
-  register: change_request_status
-  delegate_to: localhost
+- name: Handle Change Request Approval Process
+  block:
+    - name: Wait for Change Request approval
+      servicenow.itsm.change_request_info:
+        number: "{{ request.record.number }}"
+      until: change_request_status.records[0].state == "scheduled"
+      retries: 50
+      delay: 10
+      register: change_request_status
+      delegate_to: localhost
 
-- name: Update to implement the change request in ServiceNow
-  servicenow.itsm.change_request:
-    state: implement
-    number: "{{ request.record.number }}"
-    assignment_group: CAB Approval
+    - name: Update to implement the change request in ServiceNow (Approved)
+      servicenow.itsm.change_request:
+        state: implement
+        number: "{{ request.record.number }}"
+        assignment_group: CAB Approval
+      delegate_to: localhost
+
+    - name: Set approval status (Approved)
+      set_fact:
+        cr_approval_status: "approved"
+        cr_approval_message: "Change Request {{ request.record.number }} was approved and implemented"
+
+  rescue:
+    - name: Handle approval timeout
+      ansible.builtin.debug:
+        msg: 
+          - "Change Request {{ request.record.number }} was not approved within the timeout period"
+          - "Continuing with demo execution..."
+          - "In production, this would require manual intervention"
+
+    - name: Set approval status (Timeout)
+      set_fact:
+        cr_approval_status: "timeout"
+        cr_approval_message: "Change Request {{ request.record.number }} approval timed out - continuing for demo purposes"
+
+    - name: Update Change Request with timeout note (Optional)
+      servicenow.itsm.change_request:
+        number: "{{ request.record.number }}"
+        work_notes: "Demo: Approval timed out after {{ (50 * 10) / 60 }} minutes. Proceeding with demo execution."
+      delegate_to: localhost
+      ignore_errors: true
+
+- name: Display final status
+  debug:
+    msg: "{{ cr_approval_message }}"
+
+- name: Pass along final approval status
+  ansible.builtin.set_stats:
+    data:
+      cr_approval_status: "{{ cr_approval_status }}"
+      cr_approval_message: "{{ cr_approval_message }}"
+    per_host: false
   delegate_to: localhost
