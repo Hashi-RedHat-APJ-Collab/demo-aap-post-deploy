@@ -14,5 +14,3 @@
   roles:
     - demo.process.snow_change_request
   run_once: true
-
-
