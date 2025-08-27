@@ -75,14 +75,30 @@
           - "Continuing with demo execution..."
           - "In production, this would require manual intervention"
 
+    - name: Set Change Request to scheduled for demo purposes (timeout scenario)
+      servicenow.itsm.change_request:
+        state: scheduled
+        number: "{{ request.record.number }}"
+        assignment_group: CAB Approval
+      delegate_to: localhost
+      ignore_errors: true
+
+    - name: Update to implement the change request in ServiceNow (Demo timeout)
+      servicenow.itsm.change_request:
+        state: implement
+        number: "{{ request.record.number }}"
+        assignment_group: CAB Approval
+      delegate_to: localhost
+      ignore_errors: true
+
     - name: Set approval status (Timeout)
       set_fact:
-        cr_approval_status: "timeout"
-        cr_approval_message: "Change Request {{ request.record.number }} approval timed out - continuing for demo purposes"
+        cr_approval_status: "timeout_processed"
+        cr_approval_message: "Change Request {{ request.record.number }} approval timed out - auto-processed for demo purposes"
 
     - name: Log timeout note for audit trail
       debug:
-        msg: "Demo: Approval timed out after {{ (50 * 10) / 60 }} minutes. Proceeding with demo execution."
+        msg: "Demo: Approval timed out after {{ (50 * 10) / 60 }} minutes. Auto-approved and implemented for demo workflow."
       delegate_to: localhost
 
 - name: Display final status
