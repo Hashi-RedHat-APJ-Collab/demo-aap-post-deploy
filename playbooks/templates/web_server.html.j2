@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if event is defined and event == 'GC' %}Gartner IT Symposium{% else %}Terraform Ansible Webinar{% endif %}</title>
+    <title>{% if event is defined and event == 'GC' %}Gartner IT Symposium{% elif event is defined and event == 'TC' %}CloudTactic Platform{% else %}Terraform Ansible Webinar{% endif %}</title>
     <style>
         * {
             margin: 0;
@@ -109,19 +109,19 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>{% if event is defined and event == 'GC' %}Welcome to Gartner IT Symposium{% else %}Welcome to Our Platform{% endif %}</h1>
-            <p>{% if event is defined and event == 'GC' %}Experience the Future of IT{% else %}Powered by Terraform & Ansible{% endif %}</p>
+            <h1>{% if event is defined and event == 'GC' %}Welcome to Gartner IT Symposium{% elif event is defined and event == 'TC' %}Welcome to CloudTactic{% else %}Welcome to Our Platform{% endif %}</h1>
+            <p>{% if event is defined and event == 'GC' %}Experience the Future of IT{% elif event is defined and event == 'TC' %}Cloud Innovation & Excellence{% else %}Powered by Terraform & Ansible{% endif %}</p>
         </div>
         
         <div class="image-container">
             <div class="image-wrapper">
-                <img src="{{ image_filename }}" alt="{% if event is defined and event == 'GC' %}Gartner IT Symposium{% else %}Terraform Ansible Webinar{% endif %}">
+                <img src="{{ image_filename }}" alt="{% if event is defined and event == 'GC' %}Gartner IT Symposium{% elif event is defined and event == 'TC' %}CloudTactic Platform{% else %}Terraform Ansible Webinar{% endif %}">
             </div>
         </div>
         
         <div class="footer">
             <p>Deployed with Confidence! Using HCP Terraform & Ansible Automation Platform</p>
-            <span class="badge">{% if event is defined and event == 'GC' %}Gartner Connect{% else %}Infrastructure as Code{% endif %}</span>
+            <span class="badge">{% if event is defined and event == 'GC' %}Gartner Connect{% elif event is defined and event == 'TC' %}CloudTactic Solutions{% else %}Infrastructure as Code{% endif %}</span>
         </div>
     </div>
 </body>
