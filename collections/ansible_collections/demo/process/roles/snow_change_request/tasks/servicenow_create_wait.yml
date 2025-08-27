@@ -80,12 +80,10 @@
         cr_approval_status: "timeout"
         cr_approval_message: "Change Request {{ request.record.number }} approval timed out - continuing for demo purposes"
 
-    - name: Update Change Request with timeout note (Optional)
-      servicenow.itsm.change_request:
-        number: "{{ request.record.number }}"
-        work_notes: "Demo: Approval timed out after {{ (50 * 10) / 60 }} minutes. Proceeding with demo execution."
+    - name: Log timeout note for audit trail
+      debug:
+        msg: "Demo: Approval timed out after {{ (50 * 10) / 60 }} minutes. Proceeding with demo execution."
       delegate_to: localhost
-      ignore_errors: true
 
 - name: Display final status
   debug:
